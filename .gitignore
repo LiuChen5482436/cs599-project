@@ -1,0 +1,29 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+venv/
+
+# Local secrets and environment
+.env
+.env.*
+!.env.example
+
+# Frontend dependencies and build output
+node_modules/
+npm-debug.log*
+dist/
+
+# Runtime data generated locally
+data/
+logs/
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store

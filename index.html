@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>医疗智能体问诊系统</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/axios@1.6.2/dist/axios.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.23.2/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    #root {
+      min-height: 100vh;
+    }
+
+    .header {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 16px 24px;
+    }
+
+    .header-content {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-icon i {
+      color: white;
+      font-size: 20px;
+    }
+
+    .logo-text h1 {
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .logo-text p {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 12px;
+    }
+
+    .btn-restart {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-restart:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .risk-indicator {
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .risk-high { background: #ef4444; }
+    .risk-medium { background: #f59e0b; }
+    .risk-low { background: #22c55e; }
+
+    .main-content {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 24px;
+      min-height: calc(100vh - 140px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .welcome-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .welcome-icon {
+      width: 80px;
+      height: 80px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .welcome-icon i {
+      color: white;
+      font-size: 40px;
+    }
+
+    .welcome-title {
+      color: white;
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .welcome-desc {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      max-width: 400px;
+    }
+
+    .btn-primary {
+      padding: 12px 24px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 16px;
+      overflow-y: auto;
+    }
+
+    .message {
+      display: flex;
+      gap: 12px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .message.user {
+      flex-direction: row-reverse;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .avatar.user {
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    }
+
+    .avatar.bot {
+      background: #e5e7eb;
+    }
+
+    .avatar i {
+      font-size: 18px;
+    }
+
+    .avatar.user i {
+      color: white;
+    }
+
+    .avatar.bot i {
+      color: #6b7280;
+    }
+
+    .message-content {
+      max-width: 75%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      position: relative;
+    }
+
+    .message.user .message-content {
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.bot .message-content {
+      background: white;
+      color: #374151;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .message-text {
+      font-size: 14px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .message-time {
+      font-size: 11px;
+      opacity: 0.6;
+      margin-top: 4px;
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      background: #9ca3af;
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    .input-container {
+      background: white;
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      gap: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .input-field {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      padding: 8px;
+      background: transparent;
+    }
+
+    .btn-send {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.2s;
+    }
+
+    .btn-send:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+
+    .btn-send:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .form-container {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      resize: none;
+      min-height: 60px;
+    }
+
+    .form-textarea:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      background: white;
+    }
+
+    .form-select:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-submit:hover {
+      opacity: 0.9;
+    }
+
+    .feedback-container {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 16px;
+    }
+
+    .feedback-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .feedback-icon {
+      color: #22c55e;
+      font-size: 24px;
+    }
+
+    .feedback-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .feedback-desc {
+      color: #6b7280;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .star-rating {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .star {
+      font-size: 36px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .star:hover {
+      transform: scale(1.1);
+    }
+
+    .star.filled {
+      color: #f59e0b;
+    }
+
+    .star.empty {
+      color: #e5e7eb;
+    }
+
+    .feedback-success {
+      background: #dcfce7;
+      border: 1px solid #bbf7d0;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .feedback-success-icon {
+      color: #22c55e;
+      font-size: 24px;
+    }
+
+    .feedback-success-text {
+      color: #166534;
+      font-size: 14px;
+    }
+
+    .footer {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 16px 24px;
+      text-align: center;
+    }
+
+    .footer-text {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes typingBounce {
+      0%, 80%, 100% {
+        transform: scale(0.6);
+        opacity: 0.5;
+      }
+      40% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .header {
+        padding: 12px 16px;
+      }
+
+      .main-content {
+        padding: 16px;
+      }
+
+      .message-content {
+        max-width: 85%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+
+    const API_BASE_URL = 'http://localhost:8000';
+
+    function App() {
+      const [sessionId] = useState(() => {
+        const existing = localStorage.getItem('medical_agent_session');
+        return existing || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      });
+
+      const [messages, setMessages] = useState([]);
+      const [inputMessage, setInputMessage] = useState('');
+      const [isLoading, setIsLoading] = useState(false);
+      const [userInfo, setUserInfo] = useState(null);
+      const [showUserInfoForm, setShowUserInfoForm] = useState(false);
+      const [isComplete, setIsComplete] = useState(false);
+      const [consultationId, setConsultationId] = useState(null);
+      const [feedbackRating, setFeedbackRating] = useState(0);
+      const [feedbackComment, setFeedbackComment] = useState('');
+      const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+      const [riskLevel, setRiskLevel] = useState(null);
+      const [showRiskIndicator, setShowRiskIndicator] = useState(false);
+
+      useEffect(() => {
+        localStorage.setItem('medical_agent_session', sessionId);
+      }, [sessionId]);
+
+      useEffect(() => {
+        const loadHistory = async () => {
+          try {
+            const response = await axios.get(`${API_BASE_URL}/chat/history/${sessionId}`);
+            setMessages(response.data);
+          } catch {
+            setMessages([]);
+          }
+        };
+        loadHistory();
+      }, [sessionId]);
+
+      const handleSend = useCallback(async () => {
+        if (!inputMessage.trim() || isLoading) return;
+
+        const userMessage = {
+          id: Date.now(),
+          role: 'user',
+          content: inputMessage.trim(),
+          created_at: new Date().toISOString(),
+        };
+
+        setMessages(prev => [...prev, userMessage]);
+        setInputMessage('');
+        setIsLoading(true);
+
+        try {
+          const request = {
+            session_id: sessionId,
+            message: inputMessage.trim(),
+            user_info: userInfo || undefined,
+          };
+
+          const response = await axios.post(`${API_BASE_URL}/chat/`, request);
+          
+          const assistantMessage = {
+            id: Date.now() + 1,
+            role: 'assistant',
+            content: response.data.response,
+            created_at: new Date().toISOString(),
+          };
+
+          setMessages(prev => [...prev, assistantMessage]);
+          setConsultationId(response.data.consultation_id);
+          setIsComplete(response.data.is_complete);
+          
+          const responseText = response.data.response;
+          if (responseText.includes('高风险') || responseText.includes('紧急') || responseText.includes('立即就医')) {
+            setRiskLevel('high');
+            setShowRiskIndicator(true);
+          } else if (responseText.includes('中风险')) {
+            setRiskLevel('medium');
+            setShowRiskIndicator(true);
+          } else if (responseText.includes('低风险')) {
+            setRiskLevel('low');
+            setShowRiskIndicator(true);
+          }
+
+          if (response.data.is_complete) {
+            setShowUserInfoForm(false);
+          }
+        } catch (error) {
+          const errorMessage = {
+            id: Date.now() + 1,
+            role: 'assistant',
+            content: '抱歉，系统暂时无法响应，请稍后重试。',
+            created_at: new Date().toISOString(),
+          };
+          setMessages(prev => [...prev, errorMessage]);
+        } finally {
+          setIsLoading(false);
+        }
+      }, [inputMessage, isLoading, sessionId, userInfo]);
+
+      const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          handleSend();
+        }
+      };
+
+      const handleUserInfoSubmit = (info) => {
+        setUserInfo(info);
+        setShowUserInfoForm(false);
+      };
+
+      const handleFeedbackSubmit = async () => {
+        if (!consultationId || feedbackRating === 0) return;
+
+        try {
+          await axios.post(`${API_BASE_URL}/feedback/`, {
+            consultation_id: consultationId,
+            rating: feedbackRating,
+            comment: feedbackComment,
+          });
+          setFeedbackSubmitted(true);
+        } catch {
+          alert('提交反馈失败，请稍后重试');
+        }
+      };
+
+      const handleRestart = () => {
+        const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem('medical_agent_session', newSessionId);
+        window.location.reload();
+      };
+
+      const getRiskClass = () => {
+        switch (riskLevel) {
+          case 'high': return 'risk-high';
+          case 'medium': return 'risk-medium';
+          case 'low': return 'risk-low';
+          default: return '';
+        }
+      };
+
+      const getRiskText = () => {
+        switch (riskLevel) {
+          case 'high': return '高风险';
+          case 'medium': return '中风险';
+          case 'low': return '低风险';
+          default: return '未知';
+        }
+      };
+
+      return (
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+          <header className="header">
+            <div className="header-content">
+              <div className="logo">
+                <div className="logo-icon">
+                  <i className="material-icons">message</i>
+                </div>
+                <div className="logo-text">
+                  <h1>医疗智能体</h1>
+                  <p>AI辅助问诊系统</p>
+                </div>
+              </div>
+              <button onClick={handleRestart} className="btn-restart">
+                <i className="material-icons" style={{ fontSize: '16px' }}>refresh</i>
+                新对话
+              </button>
+            </div>
+          </header>
+
+          {showRiskIndicator && (
+            <div className={`risk-indicator ${getRiskClass()}`}>
+              <i className="material-icons" style={{ fontSize: '16px' }}>warning</i>
+              当前评估风险等级：{getRiskText()}
+            </div>
+          )}
+
+          <main className="main-content">
+            {!showUserInfoForm && messages.length === 0 && !isComplete && (
+              <div className="welcome-screen">
+                <div className="welcome-icon">
+                  <i className="material-icons">smart_toy</i>
+                </div>
+                <h2 className="welcome-title">欢迎使用医疗智能体</h2>
+                <p className="welcome-desc">
+                  我是您的AI医疗助手，可以帮助您进行初步的健康咨询。<br />
+                  请告诉我您的症状，我会为您提供专业的建议。
+                </p>
+                <button onClick={() => setShowUserInfoForm(true)} className="btn-primary">
+                  填写个人信息
+                </button>
+              </div>
+            )}
+
+            {showUserInfoForm && (
+              <UserInfoForm onSubmit={handleUserInfoSubmit} />
+            )}
+
+            {!showUserInfoForm && messages.length > 0 && (
+              <div className="chat-container">
+                {messages.map((message) => (
+                  <div key={message.id} className={`message ${message.role}`}>
+                    <div className={`avatar ${message.role}`}>
+                      <i className="material-icons">
+                        {message.role === 'user' ? 'person' : 'smart_toy'}
+                      </i>
+                    </div>
+                    <div className="message-content">
+                      <p className="message-text">{message.content}</p>
+                      <p className="message-time">
+                        {new Date(message.created_at).toLocaleTimeString('zh-CN', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="message bot">
+                    <div className="avatar bot">
+                      <i className="material-icons">smart_toy</i>
+                    </div>
+                    <div className="message-content">
+                      <div className="typing-indicator">
+                        <span className="typing-dot"></span>
+                        <span className="typing-dot"></span>
+                        <span className="typing-dot"></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isComplete && !feedbackSubmitted && (
+              <div className="feedback-container">
+                <div className="feedback-header">
+                  <i className="material-icons feedback-icon">check_circle</i>
+                  <h3 className="feedback-title">问诊已完成</h3>
+                </div>
+                <p className="feedback-desc">感谢您使用医疗智能体！请为本次服务评分：</p>
+                <div className="star-rating">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span
+                      key={star}
+                      onClick={() => setFeedbackRating(star)}
+                      className={`star ${star <= feedbackRating ? 'filled' : 'empty'}`}
+                    >
+                      &#9733;
+                    </span>
+                  ))}
+                </div>
+                <textarea
+                  value={feedbackComment}
+                  onChange={(e) => setFeedbackComment(e.target.value)}
+                  placeholder="请输入您的反馈（可选）"
+                  className="form-textarea"
+                  rows={3}
+                />
+                <button
+                  onClick={handleFeedbackSubmit}
+                  disabled={feedbackRating === 0}
+                  className="btn-submit"
+                  style={{ marginTop: '16px' }}
+                >
+                  提交反馈
+                </button>
+              </div>
+            )}
+
+            {feedbackSubmitted && (
+              <div className="feedback-success">
+                <i className="material-icons feedback-success-icon">check_circle</i>
+                <span className="feedback-success-text">感谢您的反馈！您的意见对我们非常重要。</span>
+              </div>
+            )}
+
+            {!isComplete && !showUserInfoForm && (
+              <div className="input-container">
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="请描述您的症状或问题..."
+                  className="input-field"
+                  disabled={isLoading}
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!inputMessage.trim() || isLoading}
+                  className="btn-send"
+                >
+                  <i className="material-icons" style={{ fontSize: '16px' }}>send</i>
+                  发送
+                </button>
+              </div>
+            )}
+          </main>
+
+          <footer className="footer">
+            <p className="footer-text">
+              医疗智能体仅供参考，不能替代专业医疗诊断<br />
+              如遇紧急情况，请立即拨打急救电话或前往医院就诊
+            </p>
+          </footer>
+        </div>
+      );
+    }
+
+    function UserInfoForm({ onSubmit }) {
+      const [age, setAge] = useState('');
+      const [gender, setGender] = useState('');
+      const [medicalHistory, setMedicalHistory] = useState('');
+      const [medication, setMedication] = useState('');
+      const [allergies, setAllergies] = useState('');
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        onSubmit({
+          age: age ? parseInt(age) : undefined,
+          gender: gender || undefined,
+          medical_history: medicalHistory || undefined,
+          medication: medication || undefined,
+          allergies: allergies || undefined,
+        });
+      };
+
+      return (
+        <div className="form-container">
+          <h2 className="form-title">请填写您的个人信息</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label className="form-label">年龄</label>
+              <input
+                type="number"
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                placeholder="请输入年龄"
+                className="form-input"
+                min="0"
+                max="150"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">性别</label>
+              <select value={gender} onChange={(e) => setGender(e.target.value)} className="form-select">
+                <option value="">请选择性别</option>
+                <option value="男">男</option>
+                <option value="女">女</option>
+                <option value="其他">其他</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">既往病史（可选）</label>
+              <textarea
+                value={medicalHistory}
+                onChange={(e) => setMedicalHistory(e.target.value)}
+                placeholder="请描述您的既往病史"
+                className="form-textarea"
+                rows={2}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">当前用药（可选）</label>
+              <textarea
+                value={medication}
+                onChange={(e) => setMedication(e.target.value)}
+                placeholder="请描述您正在服用的药物"
+                className="form-textarea"
+                rows={2}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">过敏史（可选）</label>
+              <textarea
+                value={allergies}
+                onChange={(e) => setAllergies(e.target.value)}
+                placeholder="请描述您的过敏史"
+                className="form-textarea"
+                rows={2}
+              />
+            </div>
+            <button type="submit" className="btn-submit">
+              确认提交
+            </button>
+          </form>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
