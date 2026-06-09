@@ -9,11 +9,11 @@ class RiskClassifier:
         risk_score = 0
         factors = []
 
-        symptoms = user_info.get("symptoms", "")
-        age = user_info.get("age", 0)
-        medical_history = user_info.get("medical_history", "")
-        special_condition = user_info.get("special_condition", "")
-        temperature = user_info.get("temperature", 0)
+        symptoms = user_info.get("symptoms", "") or ""
+        age = user_info.get("age")
+        medical_history = user_info.get("medical_history", "") or ""
+        special_condition = user_info.get("special_condition", "") or ""
+        temperature = user_info.get("temperature") or 0
 
         if "发热" in symptoms or "发烧" in symptoms:
             risk_score += 10
@@ -41,10 +41,10 @@ class RiskClassifier:
             risk_score += 35
             factors.append("消化道出血")
 
-        if age >= 65:
+        if age is not None and age >= 65:
             risk_score *= 1.3
             factors.append("老年人(>=65岁)")
-        elif age <= 12:
+        elif age is not None and age <= 12:
             risk_score *= 1.5
             factors.append("儿童(<=12岁)")
 
